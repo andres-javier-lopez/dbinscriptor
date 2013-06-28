@@ -4,4 +4,4 @@
 $host = 'localhost';
 $user = 'root';
 $password = '';
-$database = 'database';
+$database = 'dbinscriptor';

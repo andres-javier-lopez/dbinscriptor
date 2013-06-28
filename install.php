@@ -18,7 +18,9 @@ $result = $mysql->real_query('INSERT INTO `changelog` VALUES(NULL,1,0,0,"initial
 
 if($result){
 	echo 'Success';
-	file_put_contents('db.lock', 'locked');
+	if(is_writable('.')) {
+		file_put_contents('db.lock', 'locked');
+	}
 }
 else {
 	echo 'Fail: '.$mysql->error;
