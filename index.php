@@ -30,7 +30,30 @@ class System extends Manager {
 		
 		return 'lets rock';
 	}
-}
+	
+	public function save() {
+		try {
+			$name = Request::getPOST('name');
+			$route = Request::getPOST('route');
+			$database = Request::getPOST('database');
+		}
+		catch(RequestException $e) {
+			return $e->getMessage();
+		}
 
+		try {
+			$model = ModelLoader::getModel('project');
+			$dataset = $model->getDataset();
+			$dataset->name = $name;
+			$dataset->project_route = $route;
+			$dataset->database_name = $database;
+			$model->create($dataset);
+			MoonDragon::redirect('?task=index');
+		}
+		catch(QueryException $e) {
+			return $e->getMessage();
+		}
+	}
+}
 
 MoonDragon::run(new System());
