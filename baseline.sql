@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS `projects` (
   `project_route` VARCHAR(300) NOT NULL,
   `database_charset` VARCHAR(50) NOT NULL DEFAULT 'utf8_unicode_ci',
   `database_version` VARCHAR(20) NOT NULL DEFAULT '0.0.0',
-  PRIMARY KEY (`id_project`) )
+  PRIMARY KEY (`id_project`),
+  UNIQUE( `database_name` ) )
 ENGINE = InnoDB;
 
 DROP TABLE IF EXISTS `projects_changelog` ;
