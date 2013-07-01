@@ -24,11 +24,28 @@ class System extends Manager {
 		
 		echo '<table>';
 		foreach($model->read() as $row) {
-			echo '<tr><td>'.$row->name.'</td></tr>';
+			$database_dir = $row->project_route.'/database';
+			$version_file = $database_dir.'/version.txt';
+			if(file_exists($row->project_route) && file_exists($database_dir) && file_exists($version_file)) {
+				$version_txt = file_get_contents($version_file);
+				if(trim($version_txt) == $row->database_version) {
+					$status = 'All up to date';
+				}
+				elseif($this->check_update($row->database_version, trim($version_txt))) {
+					$status = '<strong>Update!</strong>';
+				}
+				else {
+					$status = '<strong>Database don\'t match</strong>';
+				} 
+			}
+			else {
+				$status = '<strong>Project missing</strong>';
+			}
+			echo '<tr><td>'.$row->name.'</td><td>'.$row->database_name.'</td><td>'.$row->database_version.'</td><td>'.$status.'</td><td>'.$row->project_route.'</td></tr>';
+			
+			
 		}
-		echo '</table>';
-		
-		return 'lets rock';
+		echo '</table>';		
 	}
 	
 	public function save() {
@@ -52,6 +69,24 @@ class System extends Manager {
 		}
 		catch(QueryException $e) {
 			return $e->getMessage();
+		}
+	}
+	
+	protected function check_update($current_version, $new_version) {
+		$cver = explode('.', $current_version);
+		$nver = explode('.', $new_version);
+		
+		if($nver[0] > $cver[0]) {
+			return true;
+		}
+		elseif ($nver[0] == $cver[0] && $nver[1] > $cver[1]) {
+			return true;
+		}
+		elseif ($nver[0] == $cver[0] && $nver[1] == $cver[1] && $nver[2] > $cver[2]) {
+			return true;
+		}
+		else {
+			return false;
 		}
 	}
 }
