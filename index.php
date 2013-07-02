@@ -320,4 +320,10 @@ class System extends Manager {
 	}
 }
 
+Buffer::start('content');
 MoonDragon::run(new System());
+Buffer::end('content');
+$content = Buffer::getContent('content');
+
+echo Template::load('main', array('content' => $content), true);
+
