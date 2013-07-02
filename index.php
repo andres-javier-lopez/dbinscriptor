@@ -41,15 +41,42 @@ class System extends Manager {
 			else {
 				$status = '<strong>Project missing</strong>';
 			}
-			echo '<tr><td>'.$row->name.'</td><td>'.$row->database_name.'</td><td>'.$row->database_version.'</td><td>'.$status.'</td><td>'.$row->project_route.'</td></tr>';
+			echo '<tr><td><a href="?task=json_edit&id='.$row->id_project.'" class="edit_button">E</a> <a href="?task=delete&id='.$row->id_project.'">D</a><td>'.$row->name.'</td><td>'.$row->database_name.'</td><td>'.$row->database_version.'</td><td>'.$status.'</td><td>'.$row->project_route.'</td></tr>';
 			
 			
 		}
-		echo '</table>';		
+		echo '</table>';
+		echo $this->addScript();
+	}
+
+	public function json_edit() {
+		header('Content-Type: application/json');
+		$model = ModelLoader::getModel('project');
+		
+		try {
+			$id_data = Request::getGET('id');
+			$data = $model->getData($id_data);
+			
+			$data_array['project']['id_project'] = $id_data;
+			$data_array['project']['name'] = $data->name;
+			$data_array['project']['database_name'] = $data->database_name;  
+			$data_array['project']['project_route'] = $data->project_route;
+			$data_array['project']['database_charset'] = $data->database_charset;
+			$data_array['project']['database_version'] = $data->database_version;
+			
+			return json_encode($data_array);
+		}
+		catch(RequestException $e) {
+			return '{"project": null}';
+		}
+		catch(QueryException $e) {
+			return '{"project": null}';
+		}
 	}
 	
 	public function save() {
 		try {
+			$id = Request::getPOST('id');
 			$name = Request::getPOST('name');
 			$route = Request::getPOST('route');
 			$database = Request::getPOST('database');
@@ -64,13 +91,28 @@ class System extends Manager {
 			$dataset->name = $name;
 			$dataset->project_route = $route;
 			$dataset->database_name = $database;
-			$model->create($dataset);
+			if($id == 0) {
+				$model->create($dataset);
+			}
+			else {
+				$model->update($id, $dataset);
+			}
 			MoonDragon::redirect('?task=index');
 		}
 		catch(QueryException $e) {
 			return $e->getMessage();
 		}
 	}
+
+	public function delete() {
+		echo 'deleting';
+		$this->index();
+	}
+	
+	protected function addScript() {
+		echo '<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>';
+		echo '<script type="text/javascript" src="js/form.js" /></script>';
+	} 
 	
 	protected function check_update($current_version, $new_version) {
 		$cver = explode('.', $current_version);
