@@ -4,11 +4,13 @@ require_once '../moondragon/moondragon.core.php';
 require_once 'moondragon.database.php';
 require_once 'moondragon.manager.php';
 require_once 'moondragon.render.php';
+require_once 'moondragon.session.php';
 include 'conexion.php';
 
 Database::connect('mysql', $host, $user, $password, $database);
-
+Session::init('dbinscriptor');
 Template::addDir('templates');
+define('CLEAN_URL', false);
 
 $data = array();
 $data['table'] = 'projects';
@@ -31,6 +33,15 @@ $data['relations'] = array('projects.id_project');
 ModelLoader::addModel('changelog', $data);
 
 class System extends Manager {
+	
+	public function __construct() {
+		parent::__construct();
+		
+		if(Session::get('authorized') !== true && $this->getTask() != 'login' && $this->getTask() != 'login_process') {
+			$this->doTask('login');
+		}
+	}
+	
 	public function index() {
 		echo Template::load('new_project');
 		
@@ -61,6 +72,26 @@ class System extends Manager {
 		}
 		echo '</table>';
 		echo $this->addScript();
+	}
+
+	public function login() {
+		echo 'Ingrese por favor';
+		echo Template::load('login');
+	}
+	
+	public function login_process() {
+		try {
+			$usuario = Request::getPOST('usuario');
+			$password = Request::getPOST('password');
+		}
+		catch(RequestException $e) {
+			
+		}
+		
+		// Proceso de login va a aquí
+		
+		Session::set('authorized', true);
+		$this->doTask('index');
 	}
 
 	public function updatedb() {
@@ -197,7 +228,7 @@ class System extends Manager {
 			}
 			$this->setDBScripts($id, $scripts);
 			
-			MoonDragon::redirect('?task=index');
+			$this->doTask('index');
 		}
 		catch(QueryException $e) {
 			return $e->getMessage();
