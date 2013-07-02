@@ -23,6 +23,13 @@ $data['fields'] = array('name');
 $data['relations'] = array('projects.id_project');
 ModelLoader::addModel('scripts', $data);
 
+$data = array();
+$data['table'] = 'projects_changelog';
+$data['primary'] = 'id_project_changelog';
+$data['fields'] = array('mayor_version', 'minor_version', 'point_version', 'script_file', 'timestamp');
+$data['relations'] = array('projects.id_project');
+ModelLoader::addModel('changelog', $data);
+
 class System extends Manager {
 	public function index() {
 		echo Template::load('new_project');
@@ -63,7 +70,7 @@ class System extends Manager {
 			$data = $model->getData($id);
 			
 			echo 'Actualizando '.$data->name.'...<br/>';
-			$route = str_replace('//', '/', $data->project_route.'/database/');
+			$route = str_replace('//', '/', $data->project_route.'/database');
 			include 'conexion.php';
 			$database = $data->database_name;
 			
@@ -72,11 +79,59 @@ class System extends Manager {
 				
 				$scripts = ModelLoader::getModel('scripts')->getReader()->addWhere('id_project', $id)->getRows();
 				foreach($scripts as $script) {
-					$command = "mysql --host=$host --user=$user --password=$password $database < {$route}{$script->name}.sql";
-					echo $command.'<br/>';
+					$command = "mysql --host=$host --user=$user --password=$password $database < {$route}/{$script->name}.sql";
+					//echo $command.'<br/>';
 					system($command);
 				}
+				$this->saveProjectVersion($id, "1.0.0", "Initial Install");
+				list($major, $minor, $point) = array(1,0,0);
 			}
+			else {
+				list($major, $minor, $point) = explode('.', $data->database_version);
+			}
+			
+			$actual_version = explode('.', trim(file_get_contents($route.'/version.txt')));
+			echo 'Actualizando...<br/>';
+			$updating = true;
+			do{
+				do {
+					do {
+						$point++;
+						$file = $route.'/updates/db.'.$major.'.'.$minor.'.'.$point.'.sql';
+						if(file_exists($file)) {
+							$command = "mysql --host=$host --user=$user --password=$password $database < $file";
+							echo $command.'<br/>';
+							system($command);
+							$this->saveProjectVersion($id, $major.'.'.$minor.'.'.$point, $file);
+						}
+						else {
+							$point = 0;
+						}
+					} while($point != 0);
+					$minor++;
+					$file = $route.'/updates/db.'.$major.'.'.$minor.'.'.$point.'.sql';
+					if(file_exists($file)) {
+						$command = "mysql --host=$host --user=$user --password=$password $database < $file";
+						echo $command.'<br/>';
+						system($command);
+						$this->saveProjectVersion($id, $major.'.'.$minor.'.'.$point, $file);
+					}
+					else {
+						$minor = 0;
+					}
+				} while($minor != 0);
+				$major++;
+				$file = $route.'/updates/db.'.$major.'.'.$minor.'.'.$point.'.sql';
+				if(file_exists($file)) {
+					$command = "mysql --host=$host --user=$user --password=$password $database < $file";
+					//echo $command.'<br/>';
+					system($command);
+					$this->saveProjectVersion($id, $major.'.'.$minor.'.'.$point, $file);
+				}
+				else {
+					$updating = false;
+				}
+			} while($updating == true);
 		}
 		catch(RequestException $e) {
 			return $e->getMessage();
@@ -85,7 +140,8 @@ class System extends Manager {
 			return $e->getMessage();
 		}
 		
-		return 'hello world!';
+		echo 'Actualizaci&oacute;n finalizada.<br/>';
+		echo '<a href="?task=index">Regresar</a><br/>';
 	}
 
 	public function json_edit() {
@@ -231,6 +287,36 @@ class System extends Manager {
 		catch(QueryException $e) {
 			return false;
 		}
+	}
+	
+	protected function saveProjectVersion($id_project, $version, $scriptfile) {
+		$modelP = ModelLoader::getModel('project');
+		$modelC = ModelLoader::getModel('changelog');
+		
+		$versionA = explode('.', $version); 
+		
+		if(count($versionA) != 3){
+			return false;
+		}
+		
+		try {
+			$data = $modelP->getData($id_project);
+			$data->database_version = $version;
+			$modelP->update($id_project, $data);
+			
+			$data = $modelC->getDataset();
+			$data->id_project = $id_project;
+			$data->major_version = $versionA[0];
+			$data->minor_version = $versionA[1];
+			$data->point_version = $versionA[2];
+			$data->script_file = $scriptfile;
+			$modelC->create($data);
+		}
+		catch(QueryException $e) {
+			return false;
+		}
+		
+		return true;
 	}
 }
 
