@@ -14,6 +14,20 @@ CREATE TABLE IF NOT EXISTS `projects` (
   UNIQUE( `database_name` ) )
 ENGINE = InnoDB;
 
+DROP TABLE IF EXISTS `install_scripts`;
+CREATE TABLE IF NOT EXISTS `install_scripts` (
+  `id_script` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `id_project` INT UNSIGNED NOT NULL,
+  `name` VARCHAR(50) NOT NULL DEFAULT 'baseline',
+  PRIMARY KEY (`id_script`),
+  INDEX `ix_project_script` (`id_project` ASC),
+  CONSTRAINT `fk_project_script`
+    FOREIGN KEY (`id_project`)
+    REFERENCES `projects` (`id_project`)
+    ON DELETE CASCADE
+    ON UPDATE NO ACTION )
+ENGINE = InnoDB;
+
 DROP TABLE IF EXISTS `projects_changelog` ;
 CREATE  TABLE IF NOT EXISTS `projects_changelog` (
   `id_project_changelog` INT UNSIGNED NOT NULL AUTO_INCREMENT,

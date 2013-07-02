@@ -8,6 +8,7 @@ $('.edit_button').on('click', function(e){
 			$('input[name="name"]').val(data.project.name);
 			$('input[name="route"]').val(data.project.project_route);
 			$('input[name="database"]').val(data.project.database_name);
+			$('input[name="scripts"]').val(data.project.scripts);
 		}
 	}, "json");
 });

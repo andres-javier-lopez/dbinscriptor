@@ -16,6 +16,13 @@ $data['primary'] = 'id_project';
 $data['fields'] = array('name', 'database_name', 'project_route', 'database_charset', 'database_version');
 ModelLoader::addModel('project', $data);
 
+$data = array();
+$data['table'] = 'install_scripts';
+$data['primary'] = 'id_script';
+$data['fields'] = array('name');
+$data['relations'] = array('projects.id_project');
+ModelLoader::addModel('scripts', $data);
+
 class System extends Manager {
 	public function index() {
 		echo Template::load('new_project');
@@ -63,6 +70,7 @@ class System extends Manager {
 			$data_array['project']['project_route'] = $data->project_route;
 			$data_array['project']['database_charset'] = $data->database_charset;
 			$data_array['project']['database_version'] = $data->database_version;
+			$data_array['project']['scripts'] = $this->getDBScripts($id_data);
 			
 			return json_encode($data_array);
 		}
@@ -80,6 +88,7 @@ class System extends Manager {
 			$name = Request::getPOST('name');
 			$route = Request::getPOST('route');
 			$database = Request::getPOST('database');
+			$scripts = Request::getPOST('scripts');
 		}
 		catch(RequestException $e) {
 			return $e->getMessage();
@@ -92,11 +101,14 @@ class System extends Manager {
 			$dataset->project_route = $route;
 			$dataset->database_name = $database;
 			if($id == 0) {
-				$model->create($dataset);
+				$id = $model->create($dataset);
+				
 			}
 			else {
 				$model->update($id, $dataset);
 			}
+			$this->setDBScripts($id, $scripts);
+			
 			MoonDragon::redirect('?task=index');
 		}
 		catch(QueryException $e) {
@@ -138,6 +150,53 @@ class System extends Manager {
 			return true;
 		}
 		else {
+			return false;
+		}
+	}
+	
+	protected function getDBScripts($id_project) {
+		$model = ModelLoader::getModel('scripts');
+		
+		try {
+			$rows = $model->getReader()->addWhere('id_project', $id_project)->getRows();
+			$scripts = array();
+			foreach($rows as $row) {
+				$scripts[] = $row->name;
+			}
+			return implode(',', $scripts);
+		}
+		catch(QueryException $e) {
+			return '';
+		}
+	}
+	
+	protected function setDBScripts($id_project, $scripts) {
+		$model = ModelLoader::getModel('scripts');
+		
+		$old_scripts = $this->getDBScripts($id_project);
+		
+		if($scripts == '') {
+			$scripts = 'baseline';
+		}
+		
+		if($scripts == $old_scripts) {
+			return true;
+		}
+		
+		try {
+			$model->deleteWhere('id_project', $id_project);
+			
+			$scripts_array = explode(',', $scripts);
+			foreach($scripts_array as $script) {
+				$dt = $model->getDataset();
+				$dt->name = $script;
+				$dt->id_project = $id_project;
+				$model->create($dt);
+			}
+			
+			return true;
+		}
+		catch(QueryException $e) {
 			return false;
 		}
 	}
