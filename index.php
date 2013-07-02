@@ -39,7 +39,7 @@ class System extends Manager {
 					$status = 'All up to date';
 				}
 				elseif($this->check_update($row->database_version, trim($version_txt))) {
-					$status = '<strong>Update!</strong>';
+					$status = '<a href="?task=updatedb&id='.$row->id_project.'"><strong>Update!</strong></a>';
 				}
 				else {
 					$status = '<strong>Database don\'t match</strong>';
@@ -54,6 +54,38 @@ class System extends Manager {
 		}
 		echo '</table>';
 		echo $this->addScript();
+	}
+
+	public function updatedb() {
+		try {
+			$id = Request::getGET('id');
+			$model = ModelLoader::getModel('project');
+			$data = $model->getData($id);
+			
+			echo 'Actualizando '.$data->name.'...<br/>';
+			$route = str_replace('//', '/', $data->project_route.'/database/');
+			include 'conexion.php';
+			$database = $data->database_name;
+			
+			if($data->database_version == '0.0.0') {
+				echo 'Instalando base de datos inicial...<br/>';
+				
+				$scripts = ModelLoader::getModel('scripts')->getReader()->addWhere('id_project', $id)->getRows();
+				foreach($scripts as $script) {
+					$command = "mysql --host=$host --user=$user --password=$password $database < {$route}{$script->name}.sql";
+					echo $command.'<br/>';
+					system($command);
+				}
+			}
+		}
+		catch(RequestException $e) {
+			return $e->getMessage();
+		}
+		catch(QueryException $e) {
+			return $e->getMessage();
+		}
+		
+		return 'hello world!';
 	}
 
 	public function json_edit() {
