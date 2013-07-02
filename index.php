@@ -41,7 +41,7 @@ class System extends Manager {
 			else {
 				$status = '<strong>Project missing</strong>';
 			}
-			echo '<tr><td><a href="?task=json_edit&id='.$row->id_project.'" class="edit_button">E</a> <a href="?task=delete&id='.$row->id_project.'">D</a><td>'.$row->name.'</td><td>'.$row->database_name.'</td><td>'.$row->database_version.'</td><td>'.$status.'</td><td>'.$row->project_route.'</td></tr>';
+			echo '<tr data-id="'.$row->id_project.'"><td><a href="?task=json_edit&id='.$row->id_project.'" class="edit_button">E</a> <a href="?task=delete" class="delete_button" data-id="'.$row->id_project.'">D</a><td>'.$row->name.'</td><td>'.$row->database_name.'</td><td>'.$row->database_version.'</td><td>'.$status.'</td><td>'.$row->project_route.'</td></tr>';
 			
 			
 		}
@@ -105,8 +105,18 @@ class System extends Manager {
 	}
 
 	public function delete() {
-		echo 'deleting';
-		$this->index();
+		try {
+			$id = Request::getPOST('id');
+			$model = ModelLoader::getModel('project');
+			$model->delete($id);
+			return 1;
+		}
+		catch(RequestException $e) {
+			return $e->getMessage();
+		}
+		catch(QueryException $e) {
+			return $e->getMessage();
+		}
 	}
 	
 	protected function addScript() {

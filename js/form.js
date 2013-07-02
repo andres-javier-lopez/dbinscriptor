@@ -11,3 +11,18 @@ $('.edit_button').on('click', function(e){
 		}
 	}, "json");
 });
+
+
+$('.delete_button').on('click', function(e) {
+	e.preventDefault();
+	var id = $(e.target).attr('data-id');
+	var href = $(e.target).attr('href');
+	$.post(href, {'id': id}, function(data) {
+		if(data == 1) {
+			$('tr[data-id=' + id +']').remove();
+		}
+		else {
+			alert(data);
+		}
+	});
+});
