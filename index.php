@@ -149,7 +149,7 @@ class System extends Manager {
 						$file = $route.'/updates/db.'.$major.'.'.$minor.'.'.$point.'.sql';
 						if(file_exists($file)) {
 							$command = "mysql --host=$host --user=$user --password=$password $database < $file";
-							echo $command.'<br/>';
+							//echo $command.'<br/>';
 							system($command);
 							$this->saveProjectVersion($id, $major.'.'.$minor.'.'.$point, $file);
 						}
@@ -161,7 +161,7 @@ class System extends Manager {
 					$file = $route.'/updates/db.'.$major.'.'.$minor.'.'.$point.'.sql';
 					if(file_exists($file)) {
 						$command = "mysql --host=$host --user=$user --password=$password $database < $file";
-						echo $command.'<br/>';
+						//echo $command.'<br/>';
 						system($command);
 						$this->saveProjectVersion($id, $major.'.'.$minor.'.'.$point, $file);
 					}
@@ -195,6 +195,7 @@ class System extends Manager {
 
 	public function json_edit() {
 		header('Content-Type: application/json');
+		Buffer::start('noformat');
 		$model = ModelLoader::getModel('project');
 		
 		try {
@@ -217,6 +218,7 @@ class System extends Manager {
 		catch(QueryException $e) {
 			return '{"project": null}';
 		}
+		Buffer::end('noformat');
 	}
 	
 	public function save() {
@@ -254,6 +256,7 @@ class System extends Manager {
 	}
 
 	public function delete() {
+		Buffer::start('noformat');
 		try {
 			$id = Request::getPOST('id');
 			$model = ModelLoader::getModel('project');
@@ -266,6 +269,7 @@ class System extends Manager {
 		catch(QueryException $e) {
 			return $e->getMessage();
 		}
+		Buffer::end('noformat');
 	}
 	
 	protected function addScript() {
@@ -374,5 +378,11 @@ MoonDragon::run(new System());
 Buffer::end('content');
 $content = Buffer::getContent('content');
 
-echo Template::load('main', array('content' => $content), true);
+$noformat = Buffer::getContent('noformat');
+if($noformat == '') {
+	echo Template::load('main', array('content' => $content), true);
+}
+else {
+	echo $noformat;
+}
 
