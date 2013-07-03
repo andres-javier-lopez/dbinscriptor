@@ -32,6 +32,12 @@ $data['fields'] = array('mayor_version', 'minor_version', 'point_version', 'scri
 $data['relations'] = array('projects.id_project');
 ModelLoader::addModel('changelog', $data);
 
+$data = array();
+$data['table'] = 'users';
+$data['primary'] = 'id_user';
+$data['fields'] = array('username', 'password');
+ModelLoader::addModel('users', $data);
+
 class System extends Manager {
 	
 	public function __construct() {
@@ -67,10 +73,9 @@ class System extends Manager {
 				$status = '<strong>Project missing</strong>';
 			}
 			echo '<tr data-id="'.$row->id_project.'"><td><a href="?task=json_edit&id='.$row->id_project.'" class="edit_button">E</a> <a href="?task=delete" class="delete_button" data-id="'.$row->id_project.'">D</a><td>'.$row->name.'</td><td>'.$row->database_name.'</td><td>'.$row->database_version.'</td><td>'.$status.'</td><td>'.$row->project_route.'</td></tr>';
-			
-			
 		}
 		echo '</table>';
+		echo '<br/><br/><a href="?task=logout">Logout</a>';
 		echo $this->addScript();
 	}
 
@@ -88,10 +93,23 @@ class System extends Manager {
 			
 		}
 		
-		// Proceso de login va a aquí
+		$model = ModelLoader::getModel('users');
+		$id = $model->getId('username', $usuario);
+		$data = $model->getData($id);
 		
-		Session::set('authorized', true);
-		$this->doTask('index');
+		if(crypt($password, $data->password) == $data->password) {
+			Session::set('authorized', true);
+			$this->doTask('index');
+		}
+		else {
+			Session::set('authorized', false);
+			$this->doTask('login');
+		}
+	}
+
+	public function logout() {
+		Session::set('authorized', false);
+		$this->doTask('login');
 	}
 
 	public function updatedb() {
