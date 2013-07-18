@@ -325,7 +325,7 @@ class System extends Manager {
 		}
 		
 		try {
-			$model->deleteWhere('id_project', $id_project);
+			$model->deleteWhere(array('id_project' => $id_project));
 			
 			$scripts_array = explode(',', $scripts);
 			foreach($scripts_array as $script) {
